@@ -125,15 +125,30 @@ A Message Queue is a middleware component that enables applications to exchange 
 
 ---
 
-## Blocker Log
-(add entries below each time you hit a real problem, using this shape:)
+### Blocker: Docker CLI can't connect to Docker daemon
+**Exact Error:** failed to connect to the docker API at npipe:////./pipe/docker_engine...
+**What I Tried:** ran `docker run` directly
+**Result:** connection error — daemon not reachable
+**Next Approach:** waited / Docker Desktop finished starting, retried the same command
+**Final Solution:** re-ran `docker run` after Docker Desktop was fully up
+**Why It Worked:** the Docker CLI needs the Docker Desktop background service (daemon) running first — it wasn't ready yet on the first attempt
+**Time Spent:** [fill in]
+**Lesson Learned:** always confirm Docker Desktop is fully started (steady whale icon) before running docker commands, not just installed
 
-### Blocker:
-**Exact Error:**
-**What I Tried:**
-**Result:**
-**Next Approach:**
-**Final Solution:**
-**Why It Worked:**
-**Time Spent:**
-**Lesson Learned:**
+## What I Learned
+- A connection opens a link to the RabbitMQ server; a channel is a lightweight
+  pathway within that connection where actual work (declaring queues, sending
+  messages) happens.
+- queue_declare() is idempotent - safe to call every run, it won't duplicate
+  an existing queue.
+- basic_publish() with exchange='' routes directly to the queue named in
+  routing_key - the simplest routing mode RabbitMQ supports.
+- Messages must be sent as text/bytes, not Python objects - json.dumps()
+  converts the dictionary into a string RabbitMQ can carry.
+- Producer and consumer never talk to each other directly - they're only
+  connected by both declaring the same queue name.
+
+## Resource Consulted
+- Built producer.py with AI assistant guidance, line-by-line explanation
+- Verified against RabbitMQ concepts (connection/channel/queue) explained
+  by assistant before writing code
