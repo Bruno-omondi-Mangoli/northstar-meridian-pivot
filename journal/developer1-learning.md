@@ -152,3 +152,55 @@ A Message Queue is a middleware component that enables applications to exchange 
 - Built producer.py with AI assistant guidance, line-by-line explanation
 - Verified against RabbitMQ concepts (connection/channel/queue) explained
   by assistant before writing code
+
+  ### Blocker: RabbitMQ dashboard login rejected
+**Exact Error:** Not_Authorized / HTTP access denied: user 'mangolibruno@gmail.com' - invalid credentials
+**What I Tried:** logged in at localhost:15672
+**Result:** rejected
+**Next Approach:** checked docker logs rabbitmq --tail 50, found browser had
+  auto-filled my email instead of the default 'guest' credentials
+**Final Solution:** manually cleared both fields and typed guest/guest directly
+**Why It Worked:** browser autofill was substituting saved email/password
+  credentials instead of RabbitMQ's actual default guest account
+**Lesson Learned:** docker logs is the right first place to check when a
+  service behaves unexpectedly - it showed the real cause immediately,
+  and confirmed my actual producer/consumer scripts were authenticating
+  correctly the whole time, so the queue logic itself was never broken
+  **Confirmed Fixed:** dashboard now shows Overview with Connections: 1,
+Channels: 1, Queues: 1, Consumers: 1 - matches consumer.py still running
+from the terminal
+
+## What I Learned (continued)
+- RabbitMQ queues persist messages even when no consumer is connected -
+  producer and consumer are decoupled in TIME, not just in code structure.
+- Demonstrated this by running producer.py multiple times across the
+  session without a consumer always active; when consumer.py started,
+  it immediately drained all 3 backlogged messages in order.
+- This is the core reliability advantage over a direct function call:
+  if the receiving service is temporarily down, messages aren't lost,
+  they simply wait.
+
+  Target Completion Time: 0106hrs
+## Definition of Done
+A producer script publishes a fake inventory-update message to a RabbitMQ
+queue; a consumer script, running independently, receives and acknowledges
+that message; messages persist in the queue when no consumer is active and
+are delivered in order once a consumer connects, demonstrated by publishing
+3 messages with no consumer running and confirming all 3 were drained on
+consumer startup.
+
+## Known Limitations
+- Single queue, single consumer - no demonstration of multiple consumers
+  sharing load (a real production setup might run several consumer
+  instances for scaling).
+- No explicit failure-handling test (e.g. consumer crashing mid-message,
+  message requeueing via basic_nack) - acknowledgement was demonstrated
+  on the success path only.
+- Credentials (guest/guest) are RabbitMQ's local defaults, not suitable
+  for any real deployment.
+
+## Time Spent
+0506hrs
+
+## What I Would Do Differently
+pick RabbitMQ again 
